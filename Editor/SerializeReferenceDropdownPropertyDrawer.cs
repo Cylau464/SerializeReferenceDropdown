@@ -76,7 +76,9 @@ namespace SerializeReferenceDropdown.Editor
             void ShowDropdown()
             {
                 var dropdown = new SerializeReferenceDropdownAdvancedDropdown(new AdvancedDropdownState(),
-                    assignableTypes.Select(GetTypeName), index => WriteNewInstanceByIndexType(index, property));
+                    //assignableTypes.Select(GetTypeName),
+                    assignableTypes.Select(GetTypeNameWithPath),
+                    index => WriteNewInstanceByIndexType(index, property));
                 var buttonMatrix = selectTypeButton.worldTransform;
                 var position = new Vector3(buttonMatrix.m03, buttonMatrix.m13, buttonMatrix.m23);
                 var buttonRect = new Rect(position, selectTypeButton.contentRect.size);
@@ -96,10 +98,11 @@ namespace SerializeReferenceDropdown.Editor
             var dropdownTypeContent = new GUIContent(
                 text: GetTypeName(referenceType),
                 tooltip: GetTypeTooltip(referenceType));
-            if (EditorGUI.DropdownButton(dropdownRect,dropdownTypeContent, FocusType.Keyboard))
+            if (EditorGUI.DropdownButton(dropdownRect, dropdownTypeContent, FocusType.Keyboard))
             {
                 var dropdown = new SerializeReferenceDropdownAdvancedDropdown(new AdvancedDropdownState(),
-                    assignableTypes.Select(GetTypeName),
+                    //assignableTypes.Select(GetTypeName),
+                    assignableTypes.Select(GetTypeNameWithPath),
                     index => WriteNewInstanceByIndexType(index, property));
                 dropdown.Show(dropdownRect);
             }
@@ -133,6 +136,31 @@ namespace SerializeReferenceDropdown.Editor
             }
 
             return ObjectNames.NicifyVariableName(type.Name);
+        }
+
+        private KeyValuePair<string, string> GetTypeNameWithPath(Type type)
+        {
+            KeyValuePair<string, string> typeNameWithPath;
+
+            if (type == null)
+            {
+                typeNameWithPath = new KeyValuePair<string, string>(string.Empty, NullName);
+
+                return typeNameWithPath;
+            }
+
+            var typesWithNames = TypeCache.GetTypesWithAttribute(typeof(SerializeReferenceDropdownNameAttribute));
+            if (typesWithNames.Contains(type))
+            {
+                var dropdownNameAttribute = type.GetCustomAttribute<SerializeReferenceDropdownNameAttribute>();
+                typeNameWithPath = new KeyValuePair<string, string>(dropdownNameAttribute.Path, dropdownNameAttribute.Name);
+
+                return typeNameWithPath;
+            }
+
+            typeNameWithPath = new KeyValuePair<string, string>(string.Empty, ObjectNames.NicifyVariableName(type.Name));
+
+            return typeNameWithPath;
         }
 
         private string GetTypeTooltip(Type type)
